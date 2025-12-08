@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AR Tata Surya - Super Version</title>
+
+  <!-- A-FRAME -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+  <!-- AR.js -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: Arial, sans-serif;
+    }
+
+    #titleBox {
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 22px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0d6efd, #001f54);
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 9999;
+    }
+
+    .panel {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      width: 95%;
+      max-width: 450px;
+      gap: 12px;
+      z-index: 9999;
+    }
+
+    .btn {
+      flex: 1 1 calc(50% - 10px);
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6c757d, #343a40);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #scanStatus {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 12px;
+      z-index: 9999;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="titleBox">AR Tata Surya</div>
+  <div id="scanStatus"></div>
+
+  <!-- PANEL BUTTONS -->
+  <div class="panel">
+    <button class="btn" onclick="rotateUp()">⬆ Rotasi Atas</button>
+    <button class="btn" onclick="rotateDown()">⬇ Rotasi Bawah</button>
+    <button class="btn" onclick="rotateLeft()">⬅ Rotasi Kiri</button>
+    <button class="btn" onclick="rotateRight()">➡ Rotasi Kanan</button>
+    <button class="btn" onclick="zoomIn()">🔍 Zoom In</button>
+    <button class="btn" onclick="zoomOut()">🔎 Zoom Out</button>
+    <button class="btn" onclick="toggleAutoRotate()">🌀 Auto Rotate</button>
+    <button class="btn" onclick="toggleUI()">Sembunyikan UI</button>
+  </div>
+
+  <!-- AR SCENE -->
+  <a-scene embedded arjs="sourceType: webcam; facingMode: environment;">
+    
+    <!-- Background luar angkasa -->
+    <a-sky color="#000000"></a-sky>
+
+    <a-marker preset="hiro" id="marker">
+      <a-entity id="myModel"
+                gltf-model="url('uts_isvander.glb')"
+                position="0 0 0" 
+                rotation="0 0 0"
+                scale="0.3 0.3 0.3">
+      </a-entity>
+
+      <!-- Cahaya Matahari -->
+      <a-entity light="type: point; intensity: 2; distance: 10; color: #ffdd88"
+                position="0 1 1">
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+
+  </a-scene>
+
+  <script>
+    let model = document.getElementById('myModel');
+    let marker = document.getElementById('marker');
+    let statusBox = document.getElementById('scanStatus');
+
+    let autoRotate = false;
+
+    marker.addEventListener('markerFound', () => showStatus('✔ Marker Terdeteksi!'));
+    marker.addEventListener('markerLost', () => showStatus('✖ Marker Hilang'));
+
+    function showStatus(msg) {
+      statusBox.innerHTML = msg;
+      statusBox.style.display = "block";
+      setTimeout(() => statusBox.style.display = "none", 1500);
+    }
+
+    /* ROTATION MANUAL */
+    function rotateUp() {
+      let r = model.getAttribute('rotation');
+      model.setAttribute('rotation', {x: r.x - 10, y: r.y, z: r.z});
+    }
+    function rotateDown() {
+      let r = model.getAttribute('rotation');
+      model.setAttribute('rotation', {x: r.x + 10, y: r.y, z: r.z});
+    }
+    function rotateLeft() {
+      let r = model.getAttribute('rotation');
+      model.setAttribute('rotation', {x: r.x, y: r.y - 10, z: r.z});
+    }
+    function rotateRight() {
+      let r = model.getAttribute('rotation');
+      model.setAttribute('rotation', {x: r.x, y: r.y + 10, z: r.z});
+    }
+
+    /* ZOOM */
+    function zoomIn() {
+      let s = model.getAttribute('scale');
+      model.setAttribute('scale', {x: s.x + 0.05, y: s.y + 0.05, z: s.z + 0.05});
+    }
+    function zoomOut() {
+      let s = model.getAttribute('scale');
+      model.setAttribute('scale', {x: s.x - 0.05, y: s.y - 0.05, z: s.z - 0.05});
+    }
+
+    /* AUTO ROTATE */
+    function toggleAutoRotate() {
+      autoRotate = !autoRotate;
+    }
+
+    setInterval(() => {
+      if (autoRotate) {
+        let r = model.getAttribute('rotation');
+        model.setAttribute('rotation', {x: r.x, y: r.y + 1, z: r.z});
+      }
+    }, 50);
+
+    /* HIDE / SHOW UI */
+    let uiHidden = false;
+
+    function toggleUI() {
+      uiHidden = !uiHidden;
+
+      let elements = [
+        document.getElementById("titleBox"),
+        document.getElementById("scanStatus"),
+        document.querySelector(".panel")
+      ];
+
+      elements.forEach(el => {
+        el.style.display = uiHidden ? "none" : "block";
+      });
+    }
+  </script>
+
+</body>
+</html>
